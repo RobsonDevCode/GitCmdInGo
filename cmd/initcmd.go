@@ -15,14 +15,19 @@ var initCommand = &cobra.Command{
 	Use:     "init",
 	Short:   "The git init command is responsible for initializing a new Git repository in the specified directory. It does this by creating a .git folder that will contain the necessary subdirectories and files for managing the repository's history, objects, and configuration.",
 	Example: "gogit init",
-	Run:     InitGoGitRepo,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := InitGoGit(); err != nil {
+			log.Fatalf("Error initializing: %d", err)
+			return
+		}
+	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCommand)
 }
 
-func InitGoGitRepo(cmd *cobra.Command, args []string) {
+func InitGoGit() error {
 	//get working directory
 	dir, err := os.Getwd()
 	if err != nil {
@@ -35,35 +40,36 @@ func InitGoGitRepo(cmd *cobra.Command, args []string) {
 
 	//check if path has already been initialized
 	if _, err := os.Stat(initPath); err == nil {
-		log.Fatalf("Path:%s is already initialized or Error: %w", initPath, err)
-		return
+		log.Fatalf("Path:%s is already initialized or Error: %s", initPath, err)
+		return err
 	}
 
-	if err := os.Mkdir(initPath, 0666); err != nil {
+	if err := os.Mkdir(initPath, 0755); err != nil {
 		log.Fatalf("failed when initializing path: %s, error: %s ", initPath, err)
-		return
-
+		return err
 	}
-	fmt.Printf("Initialized path: %s\n", initPath)
+
 	//build files
-	if err = createInitDirectories(initPath); err != nil {
+	if err := CreateInitDirectories(initPath); err != nil {
 		if err := os.Remove(".gogit"); err != nil {
 			log.Fatalf("Error backtracking file .gogit: %s", err)
-			return
+			return err
 		}
 		log.Fatalf("Error occured: %s. Removing file .gogit", err)
-		return
-
+		return err
 	}
+
+	fmt.Printf("Initialized path: %s\n", initPath)
+
 	//hide .git
-	if err := setHidden(&initPath); err != nil {
+	if err := SetHidden(&initPath); err != nil {
 		log.Fatal(err)
 	}
-
+	return nil
 }
 
-// set .gogit to hidden
-func setHidden(path *string) error {
+// SetHidden set .gogit to hidden
+func SetHidden(path *string) error {
 
 	filenameW, err := syscall.UTF16PtrFromString(*path)
 	if err != nil {
@@ -79,7 +85,7 @@ func setHidden(path *string) error {
 	return nil
 }
 
-func createInitDirectories(initPath string) error {
+func CreateInitDirectories(initPath string) error {
 
 	dirs := []string{
 		"objects",
@@ -95,17 +101,17 @@ func createInitDirectories(initPath string) error {
 	}
 
 	//Create Head file
-	if err := createHeadFile(initPath); err != nil {
+	if err := CreateHeadFile(initPath); err != nil {
 		return err
 	}
 
 	//Create Config file
-	if err := createConfigFile(initPath); err != nil {
+	if err := CreateConfigFile(initPath); err != nil {
 		return err
 	}
 
 	//Create Description
-	if err := createDiscriptionFile(initPath); err != nil {
+	if err := CreateDescriptionFile(initPath); err != nil {
 		return err
 	}
 
@@ -113,19 +119,19 @@ func createInitDirectories(initPath string) error {
 	return nil
 }
 
-// generate head file for init command
-func createHeadFile(goGitPath string) error {
+// CreateHeadFile generate head file for init command
+func CreateHeadFile(goGitPath string) error {
 	headPath := filepath.Join(goGitPath, "HEAD")
 	if err := os.WriteFile(headPath, []byte("ref: ref/head/master\n"), 0644); err != nil {
-		log.Errorf("falid when creating %s: %v", headPath, err)
+		log.Errorf("failed when creating %s: %v", headPath, err)
 		return err
 	}
 
 	return nil
 }
 
-// generate config file for init command
-func createConfigFile(goGitPath string) error {
+// CreateConfigFile generate config file for init command
+func CreateConfigFile(goGitPath string) error {
 	configPath := filepath.Join(goGitPath, "config")
 	fmt.Printf("Initialized path: %s\n", configPath)
 
@@ -147,8 +153,8 @@ func createConfigFile(goGitPath string) error {
 	return nil
 }
 
-// generate description file
-func createDiscriptionFile(goGitPath string) error {
+// CreateDescriptionFile generate description file
+func CreateDescriptionFile(goGitPath string) error {
 	descPath := filepath.Join(goGitPath, "description")
 
 	descContent := "Unnamed repository; edit this file 'description' to name the repository."
