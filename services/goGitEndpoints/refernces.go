@@ -18,8 +18,11 @@ var (
 
 func FetchRefs(url string) ([]GoGitReference, error) {
 	// Make HTTP GET request to /info/refs
-	resp, err := http.Get(url + "/info/refs?service=git-upload-pack")
+	log.Infof("Fetching references from %s", url)
+
+	resp, err := http.Get(url)
 	if err != nil {
+		log.Errorf("Error fetching references from %s : %s", url, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -29,6 +32,7 @@ func FetchRefs(url string) ([]GoGitReference, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&refsResponse); err != nil {
 		return nil, err
 	}
+	log.Infof("Api Responded with %s", refsResponse)
 
 	if refsResponse == nil || len(refsResponse) == 0 {
 		errMessage := fmt.Sprintf("Repository %s cannot be found", url)

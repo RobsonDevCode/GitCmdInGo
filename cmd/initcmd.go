@@ -17,7 +17,7 @@ var initCommand = &cobra.Command{
 	Example: "gogit init",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := InitGoGit(); err != nil {
-			log.Fatalf("Error initializing: %d", err)
+			log.Fatalf("Error initializing: %s", err)
 			return
 		}
 	},
@@ -33,6 +33,9 @@ func InitGoGit() error {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	dir = `C:\\Repos\\test\\dobetesting\\`
+
 	initPath := filepath.Join(dir, ".gogit")
 
 	//check if path has already been initialized
@@ -120,7 +123,7 @@ func CreateInitDirectories(initPath string) error {
 func CreateHeadFile(goGitPath string) error {
 	headPath := filepath.Join(goGitPath, "HEAD")
 	if err := os.WriteFile(headPath, []byte("ref: ref/head/master\n"), 0644); err != nil {
-		log.Errorf("failed when creating %s: %v", headPath, err)
+		log.Errorf("failed when creating %s: %s", headPath, err)
 		return err
 	}
 

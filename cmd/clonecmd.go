@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"GoGitCLI.RobsonDevCode.Com/extentions"
-	. "GoGitCLI.RobsonDevCode.Com/models/gogitApiModels"
 	"GoGitCLI.RobsonDevCode.Com/services/goGitEndpoints"
+	"errors"
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
 	"net/url"
@@ -17,30 +17,26 @@ type GoGitApiConnection struct {
 var cloneCommand = &cobra.Command{
 	Use:     "clone",
 	Short:   "Clone a repository into a new directory",
-	Example: "gogit clone <repository Url>",
-	Run:     CloneGoGit,
+	Args:    cobra.ExactArgs(1),
+	Example: "gogit clone [repository Url]",
+	Run: func(cmd *cobra.Command, args []string) {
+		CloneGoGit(args[0])
+	},
 }
+
+var (
+	repoUrl string
+)
 
 func init() {
 	rootCmd.AddCommand(cloneCommand)
 }
 
 // CloneGoGit implements basic git clone functionality
-func CloneGoGit(cmd *cobra.Command, args []string) {
-	repoUrl, err := cmd.Flags().GetString("repoUrl")
-	if err != nil {
-		log.Fatalf("Error reading Url: %d", err)
-		return
-	}
-
-	if repoUrl == "" {
-		log.Fatal("Repository Url is required")
-		return
-	}
-
-	isWorkingUrl := isURL(repoUrl)
+func CloneGoGit(url string) error {
+	isWorkingUrl := isURL(url)
 	if !isWorkingUrl {
-		log.Fatal("Invalid Url")
+		return errors.New("Invalid Url")
 	}
 
 	//get working directory
@@ -59,16 +55,23 @@ func CloneGoGit(cmd *cobra.Command, args []string) {
 	initErr := InitGoGit()
 	if initErr != nil {
 		log.Fatal(initErr)
+		return initErr
 	}
 
 	//Fetch refs from gogit api
-	refs, err := goGitEndpoints.FetchRefs(repoUrl)
-	if err != nil {
-		log.Errorf("")
+	refs, fetchErr := goGitEndpoints.FetchRefs(url)
+
+	if fetchErr != nil {
+		log.Errorf("Error Fetching Refs: %s", fetchErr)
+		return fetchErr
 	}
 	if refs == nil {
-
+		log.Error("No Refs Found")
 	}
+
+	log.Infof("%s was clone into %s ", url, dir)
+
+	return nil
 }
 
 func isURL(input string) bool {
