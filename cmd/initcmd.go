@@ -33,9 +33,6 @@ func InitGoGit() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	dir = `C:\\Repos\\test\\dobetesting\\`
-
 	initPath := filepath.Join(dir, ".gogit")
 
 	//check if path has already been initialized
