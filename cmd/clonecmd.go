@@ -20,7 +20,9 @@ var cloneCommand = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "gogit clone [repository Url]",
 	Run: func(cmd *cobra.Command, args []string) {
-		CloneGoGit(args[0])
+		if err := CloneGoGit(args[0]); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

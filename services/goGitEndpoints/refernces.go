@@ -18,6 +18,8 @@ var (
 
 func FetchRefs(url string) ([]GoGitReference, error) {
 	// Make HTTP GET request to /info/refs
+	url = url + "/info/refs"
+
 	log.Infof("Fetching references from %s", url)
 
 	resp, err := http.Get(url)
